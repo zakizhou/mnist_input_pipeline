@@ -73,6 +73,7 @@ def inference(inputs):
 def loss(logits, labels):
     cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits, labels)
     loss = tf.reduce_mean(cross_entropy, name="loss")
+    tf.add_to_collection("loss", loss)
     return loss
 
 
