@@ -6,7 +6,7 @@ from __future__ import print_function
 import tensorflow as tf
 import mnist
 from mnist_input import mnist_inputs
-NUM_STEPS = 150
+NUM_STEPS = 300
 
 
 def main():
