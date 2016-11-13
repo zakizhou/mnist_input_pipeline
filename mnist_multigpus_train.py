@@ -6,7 +6,7 @@ from __future__ import print_function
 import tensorflow as tf
 import mnist
 from mnist_input import mnist_inputs
-
+from datetime import datetime
 NUM_STEPS = 300
 LEARNING_RATE = 0.0001
 NUM_GPUS = 2
@@ -53,11 +53,28 @@ def main():
         train_step = optimizer.apply_gradients(gradient_mean)
         init = tf.group(tf.initialize_all_variables(),
                         tf.initialize_local_variables())
-        with tf.Session() as sess:
-            sess.run(init)
-            for index in range(NUM_STEPS):
+        sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+        sess.run(init)
+        coord = tf.train.Coordinator()
+        threads = tf.train.start_queue_runners(sess=sess, coord=coord)
+        start_time = datetime.now()
+        try:
+            index = 1
+            while not coord.should_stop():
                 _, loss_value = sess.run([train_step, loss])
-                print("step: "+str(loss_value))
+                print("step: " + str(index) + " loss:" + str(loss_value))
+                index += 1
+        except tf.errors.OutOfRangeError:
+            print('Done training -- epoch limit reached')
+        finally:
+            # When done, ask the threads to stop.
+            coord.request_stop()
+
+        # Wait for threads to finish.
+        coord.join(threads)
+        end_time = datetime.now()
+        sess.close()
+        print("Time Consumption: "+str(end_time - start_time))
 
 
 if __name__ == "__main__":
