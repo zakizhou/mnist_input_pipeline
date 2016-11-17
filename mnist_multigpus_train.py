@@ -49,6 +49,9 @@ def main():
                     tf.get_variable_scope().reuse_variables()
                     gradient = optimizer.compute_gradients(loss)
                     tower_gradients.append(gradient)
+        validation_x, validation_y = mnist_inputs(MIN_AFTER_DEQUEUE, train=False, num_epochs=None)
+        validation_logits = mnist.inference(validation_x)
+        validation_accuracy = mnist.accuracy(validation_logits, validation_y)
         gradient_mean = averaged_gradients(tower_gradients)
         train_step = optimizer.apply_gradients(gradient_mean)
         init = tf.group(tf.initialize_all_variables(),
@@ -63,18 +66,27 @@ def main():
             while not coord.should_stop():
                 _, loss_value = sess.run([train_step, loss])
                 print("step: " + str(index) + " loss:" + str(loss_value))
+                if index % 10 == 0:
+                    accuracy = sess.run(validation_accuracy)
+                    print("validation accuracy: "+str(accuracy))
                 index += 1
         except tf.errors.OutOfRangeError:
             print('Done training -- epoch limit reached')
+            end_time = datetime.now()
+            print("Time Consumption: " + str(end_time - start_time))
+        except KeyboardInterrupt:
+            print("keyboard interrupt detected, stop running")
+            del sess
+
         finally:
             # When done, ask the threads to stop.
             coord.request_stop()
 
         # Wait for threads to finish.
         coord.join(threads)
-        end_time = datetime.now()
+
         sess.close()
-        print("Time Consumption: "+str(end_time - start_time))
+        del sess
 
 
 if __name__ == "__main__":
